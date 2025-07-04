@@ -1,0 +1,7 @@
+<resources>
+        <string name="app_name">MarkEdit</string>
+        <string name="btn_load_file">Выбрать файл</string>
+        <string name="btn_load_url">Скачать по URL</string>
+        <string name="error_file_read">Ошибка чтения файла</string>
+        <string name="error_network">Ошибка подключения</string>
+</resources>
