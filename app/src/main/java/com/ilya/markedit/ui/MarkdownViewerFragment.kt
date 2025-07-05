@@ -1,5 +1,5 @@
 package com.ilya.markedit.ui
-
+import com.ilya.markedit.R
 
 import android.net.Uri
 import android.os.Bundle
@@ -10,7 +10,7 @@ import android.widget.Button
 import android.widget.LinearLayout
 import androidx.fragment.app.Fragment
 import com.ilya.markedit.MainActivity
-import com.ilya.markedit.R
+
 import com.ilya.markedit.utils.MarkdownParser
 
 class MarkdownViewerFragment : Fragment() {
