@@ -1,25 +1,53 @@
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
-    android:padding="16dp"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:padding="16dp">
 
-    <Button
-        android:id="@+id/btn_load_file"
-        android:text="Выбрать файл"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
 
-    <EditText
-        android:id="@+id/et_url"
-        android:hint="Введите URL"
-        android:layout_width="match_parent"
-        android:layout_height="100dp" />
+        <!-- Поле для URL -->
+        <EditText
+            android:id="@+id/et_url"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Введите URL файла"
+            android:inputType="textUri"/>
 
-    <Button
-        android:id="@+id/btn_load_url"
-        android:text="Скачать по URL"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
-</LinearLayout>
+        <Button
+            android:id="@+id/btn_load_url"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Загрузить по URL"/>
+
+        <Button
+            android:id="@+id/btn_load_file"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Выбрать файл"/>
+
+        <!-- Разделитель -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#CCCCCC"
+            android:layout_marginVertical="16dp"/>
+
+        <!-- История файлов -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="История файлов"
+            android:textStyle="bold"
+            android:textSize="18sp"/>
+
+        <LinearLayout
+            android:id="@+id/history_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="8dp"/>
+    </LinearLayout>
+</ScrollView>
