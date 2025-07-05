@@ -16,8 +16,8 @@ import com.ilya.markedit.utils.MarkdownParser
 class MarkdownViewerFragment : Fragment() {
 
     private var currentMarkdown: String = ""
-    private var currentFileUri: Uri? = null
-
+    private var filePath: String? = null
+    private var fileUri: String? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -30,11 +30,12 @@ class MarkdownViewerFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         currentMarkdown = arguments?.getString("markdown") ?: ""
+        filePath = arguments?.getString("file_path")
+        fileUri = arguments?.getString("file_uri")
+
         renderMarkdown(currentMarkdown)
-        currentFileUri = arguments?.getString("file_uri")?.let { Uri.parse(it) }
 
-
-        parentFragmentManager.setFragmentResultListener("markdown_result", viewLifecycleOwner) { _, bundle ->
+        parentFragmentManager.setFragmentResultListener("markdown_update", viewLifecycleOwner) { _, bundle ->
             val newMarkdown = bundle.getString("markdown") ?: ""
             currentMarkdown = newMarkdown
             renderMarkdown(currentMarkdown)
@@ -44,17 +45,9 @@ class MarkdownViewerFragment : Fragment() {
         editButton.setOnClickListener {
             (activity as? MainActivity)?.navigateToEditor(
                 markdown = currentMarkdown,
-                fileUri = currentFileUri?.toString() // Передаем URI в редактор
+                filePath = filePath,
+                fileUri = fileUri
             )
-        }
-        // Слушатель для обновлений после сохранения
-        parentFragmentManager.setFragmentResultListener("markdown_update", viewLifecycleOwner) { _, bundle ->
-            bundle.getString("file_uri")?.let { uriString ->
-                if (currentFileUri?.toString() == uriString) {
-                    currentMarkdown = bundle.getString("markdown") ?: ""
-                    renderMarkdown(currentMarkdown)
-                }
-            }
         }
     }
 
@@ -65,6 +58,4 @@ class MarkdownViewerFragment : Fragment() {
             container?.addView(view)
         }
     }
-
-
 }

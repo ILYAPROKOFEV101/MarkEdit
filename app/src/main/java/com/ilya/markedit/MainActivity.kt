@@ -38,11 +38,12 @@ class MainActivity : AppCompatActivity() {
     /**
      * Метод для навигации к экрану просмотра Markdown.
      */
-    fun navigateToViewer(content: String, fileUri: String? = null) {
+    fun navigateToViewer(content: String, filePath: String? = null, fileUri: String? = null) {
         val fragment = MarkdownViewerFragment().apply {
             arguments = Bundle().apply {
                 putString("markdown", content)
-                putString("file_uri", fileUri) // Передаем URI
+                putString("file_path", filePath)
+                putString("file_uri", fileUri)
             }
         }
         supportFragmentManager.beginTransaction()
@@ -51,14 +52,12 @@ class MainActivity : AppCompatActivity() {
             .commit()
     }
 
-    /**
-     * Метод для навигации к экрану редактирования Markdown.
-     */
-    fun navigateToEditor(markdown: String, fileUri: String? = null) {
+    fun navigateToEditor(markdown: String, filePath: String? = null, fileUri: String? = null) {
         val fragment = MarkdownEditorFragment().apply {
             arguments = Bundle().apply {
                 putString("markdown", markdown)
-                putString("file_uri", fileUri) // Передаем URI
+                putString("file_path", filePath)
+                putString("file_uri", fileUri)
             }
         }
         supportFragmentManager.beginTransaction()
@@ -66,5 +65,4 @@ class MainActivity : AppCompatActivity() {
             .addToBackStack(null)
             .commit()
     }
-
 }

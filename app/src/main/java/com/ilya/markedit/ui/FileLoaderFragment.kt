@@ -28,6 +28,7 @@ import com.ilya.markedit.R
 import com.ilya.markedit.utils.FileHistoryAdapter
 import com.ilya.markedit.utils.FileHistoryItem
 import java.io.BufferedReader
+import java.io.File
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
@@ -45,6 +46,13 @@ class FileLoaderFragment : Fragment() {
         requireContext().getSharedPreferences("file_history", Context.MODE_PRIVATE)
     }
 
+    // Папка для сохранения загруженных файлов
+    private val downloadsDir by lazy {
+        File(requireContext().getExternalFilesDir(null), "downloads").apply {
+            if (!exists()) mkdirs()
+        }
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -60,7 +68,6 @@ class FileLoaderFragment : Fragment() {
         btnLoadUrl = view.findViewById(R.id.btn_load_url)
         historyContainer = view.findViewById(R.id.history_container)
 
-        // Загрузка истории
         loadHistory()
 
         btnLoadFile.setOnClickListener {
@@ -93,22 +100,12 @@ class FileLoaderFragment : Fragment() {
     private fun saveHistoryItem(type: String, name: String, data: String) {
         val historyCount = historyPrefs.getInt("history_count", 0)
 
-        // Проверяем, нет ли уже такого элемента
+        // Проверяем дубликаты
         for (i in 0 until historyCount) {
-            val existingType = historyPrefs.getString("history_type_$i", null)
             val existingData = historyPrefs.getString("history_data_$i", null)
-
-            if (existingType == type && existingData == data) {
-                // Обновляем имя, если нужно
-                if (historyPrefs.getString("history_name_$i", "") != name) {
-                    historyPrefs.edit().putString("history_name_$i", name).apply()
-                    loadHistory() // Обновляем UI
-                }
-                return
-            }
+            if (existingData == data) return
         }
 
-        // Сохраняем новый элемент
         with(historyPrefs.edit()) {
             putString("history_type_$historyCount", type)
             putString("history_name_$historyCount", name)
@@ -117,7 +114,6 @@ class FileLoaderFragment : Fragment() {
             apply()
         }
 
-        // Добавляем в UI
         addHistoryItemToUI(type, name, data)
     }
 
@@ -128,20 +124,20 @@ class FileLoaderFragment : Fragment() {
             setPadding(32, 32, 32, 32)
             background = ContextCompat.getDrawable(requireContext(), R.drawable.bg_history_item)
 
-            // Обработка клика
             setOnClickListener {
                 when (type) {
-                    "uri" -> openUriFile(Uri.parse(data), false)
-                    "url" -> downloadFileFromUrl(data, false)
+                    "uri" -> openFileFromUri(Uri.parse(data))
+                    "file" -> openLocalFile(data)
                 }
             }
         }
 
-        historyContainer.addView(historyItem, 0) // Добавляем в начало
+        historyContainer.addView(historyItem, 0)
     }
 
-    private fun openUriFile(uri: Uri, addToHistory: Boolean = true) {
+    private fun openFileFromUri(uri: Uri, addToHistory: Boolean = true) {
         try {
+            // Сохраняем разрешения на постоянный доступ
             requireContext().contentResolver.takePersistableUriPermission(
                 uri,
                 Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
@@ -155,11 +151,57 @@ class FileLoaderFragment : Fragment() {
                     saveHistoryItem("uri", fileName, uri.toString())
                 }
 
-                (requireActivity() as MainActivity).navigateToViewer(content, uri.toString())
+                // Передаем URI в просмотрщик
+                (requireActivity() as MainActivity).navigateToViewer(
+                    content = content,
+                    fileUri = uri.toString()
+                )
             }
         } catch (e: Exception) {
             Toast.makeText(requireContext(), "Ошибка открытия файла", Toast.LENGTH_SHORT).show()
             e.printStackTrace()
+        }
+    }
+
+    private fun openLocalFile(filePath: String) {
+        try {
+            val file = File(filePath)
+            if (file.exists()) {
+                val content = file.readText()
+                val fileName = file.name
+
+                (requireActivity() as MainActivity).navigateToViewer(content, filePath)
+            } else {
+                Toast.makeText(requireContext(), "Файл не найден", Toast.LENGTH_SHORT).show()
+                // Удаляем из истории если файл удален
+                removeMissingHistoryItem(filePath)
+            }
+        } catch (e: Exception) {
+            Toast.makeText(requireContext(), "Ошибка чтения файла", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun removeMissingHistoryItem(filePath: String) {
+        val historyCount = historyPrefs.getInt("history_count", 0)
+        val editor = historyPrefs.edit()
+        var found = false
+
+        for (i in 0 until historyCount) {
+            val type = historyPrefs.getString("history_type_$i", "")
+            val data = historyPrefs.getString("history_data_$i", "")
+
+            if (type == "file" && data == filePath) {
+                editor.remove("history_type_$i")
+                editor.remove("history_name_$i")
+                editor.remove("history_data_$i")
+                found = true
+            }
+        }
+
+        if (found) {
+            editor.putInt("history_count", historyCount - 1)
+            editor.apply()
+            loadHistory() // Обновляем UI
         }
     }
 
@@ -177,9 +219,7 @@ class FileLoaderFragment : Fragment() {
                             fileName = cursor.getString(0)
                         }
                     }
-                } catch (e: Exception) {
-                    // Игнорируем ошибки
-                }
+                } catch (e: Exception) {}
                 fileName
             }
             else -> "Файл"
@@ -194,7 +234,7 @@ class FileLoaderFragment : Fragment() {
         startActivityForResult(intent, REQUEST_CODE_OPEN_FILE)
     }
 
-    private fun downloadFileFromUrl(urlString: String, addToHistory: Boolean = true) {
+    private fun downloadFileFromUrl(urlString: String) {
         val progress = ProgressDialog(requireContext()).apply {
             setMessage("Загрузка файла...")
             setCancelable(false)
@@ -212,14 +252,22 @@ class FileLoaderFragment : Fragment() {
                     val content = connection.inputStream.bufferedReader().readText()
                     val fileName = extractFileName(urlString, connection)
 
+                    // Сохраняем файл локально
+                    val localFile = saveContentToFile(fileName, content)
+
                     requireActivity().runOnUiThread {
                         progress.dismiss()
 
-                        if (addToHistory) {
-                            saveHistoryItem("url", fileName, urlString)
+                        if (localFile != null) {
+                            saveHistoryItem("file", fileName, localFile.absolutePath)
+                            // Передаем путь как обычную строку
+                            (requireActivity() as MainActivity).navigateToViewer(
+                                content = content,
+                                filePath = localFile.absolutePath
+                            )
+                        } else {
+                            Toast.makeText(requireContext(), "Ошибка сохранения файла", Toast.LENGTH_SHORT).show()
                         }
-
-                        (requireActivity() as MainActivity).navigateToViewer(content)
                     }
                 } else {
                     requireActivity().runOnUiThread {
@@ -236,8 +284,41 @@ class FileLoaderFragment : Fragment() {
         }
     }
 
+    private fun openFileFromUri(uri: Uri) {
+        try {
+            requireContext().contentResolver.takePersistableUriPermission(
+                uri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            )
+
+            requireContext().contentResolver.openInputStream(uri)?.use {
+                val content = it.bufferedReader().readText()
+                val fileName = getFileName(uri)
+
+                saveHistoryItem("uri", fileName, uri.toString())
+                // Передаем URI как строку
+                (requireActivity() as MainActivity).navigateToViewer(
+                    content = content,
+                    fileUri = uri.toString()
+                )
+            }
+        } catch (e: Exception) {
+            Toast.makeText(requireContext(), "Ошибка открытия файла", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun saveContentToFile(fileName: String, content: String): File? {
+        return try {
+            val file = File(downloadsDir, fileName)
+            file.writeText(content)
+            file
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     private fun extractFileName(urlString: String, connection: HttpURLConnection): String {
-        // Пробуем получить имя из Content-Disposition
+        // Из заголовков
         val contentDisposition = connection.getHeaderField("Content-Disposition")
         if (contentDisposition != null) {
             val fileNameRegex = "filename=\"?([^\"]+)\"?".toRegex()
@@ -245,17 +326,17 @@ class FileLoaderFragment : Fragment() {
             matchResult?.groupValues?.get(1)?.let { return it }
         }
 
-        // Пробуем получить имя из URL
+        // Из URL
         val decodedUrl = URLDecoder.decode(urlString, "UTF-8")
         return decodedUrl.substringAfterLast('/').substringBefore('?').takeIf { it.isNotBlank() }
-            ?: "Файл с URL"
+            ?: "downloaded_file_${System.currentTimeMillis()}.md"
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_CODE_OPEN_FILE && resultCode == Activity.RESULT_OK) {
             data?.data?.let { uri ->
-                openUriFile(uri)
+                openFileFromUri(uri)
             }
         }
     }
