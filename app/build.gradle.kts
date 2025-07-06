@@ -37,7 +37,7 @@ android {
 
 dependencies {
     implementation("androidx.fragment:fragment-ktx:1.8.8")
-   
+
 
 
     implementation(libs.androidx.core.ktx)
