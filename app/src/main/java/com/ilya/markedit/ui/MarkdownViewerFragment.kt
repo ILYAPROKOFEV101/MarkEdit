@@ -54,6 +54,7 @@ class MarkdownViewerFragment : Fragment() {
     private fun renderMarkdown(markdown: String) {
         val container = view?.findViewById<LinearLayout>(R.id.container)
         container?.removeAllViews()
+
         MarkdownParser.parse(requireContext(), markdown).forEach { view ->
             container?.addView(view)
         }

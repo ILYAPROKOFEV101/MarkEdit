@@ -4,4 +4,5 @@
         <string name="btn_load_url">Скачать по URL</string>
         <string name="error_file_read">Ошибка чтения файла</string>
         <string name="error_network">Ошибка подключения</string>
+        <string name="save">созранить</string>
 </resources>

@@ -18,16 +18,22 @@ import com.ilya.markedit.MainActivity
 import java.io.File
 
 
+
+import android.widget.*
+
+
 class MarkdownEditorFragment : Fragment() {
 
     private lateinit var editText: EditText
     private lateinit var saveButton: Button
+    private lateinit var toolbar: LinearLayout
 
     private var filePath: String? = null
     private var fileUri: Uri? = null
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
+        inflater: LayoutInflater,
+        container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
         return inflater.inflate(R.layout.fragment_markdown_editor, container, false)
@@ -38,13 +44,15 @@ class MarkdownEditorFragment : Fragment() {
 
         editText = view.findViewById(R.id.editText)
         saveButton = view.findViewById(R.id.btn_save)
+        toolbar = view.findViewById(R.id.toolbar)
 
         val initialMarkdown = arguments?.getString("markdown") ?: ""
         editText.setText(initialMarkdown)
 
-        // Получаем параметры файла
         filePath = arguments?.getString("file_path")
         fileUri = arguments?.getString("file_uri")?.let { Uri.parse(it) }
+
+        setupToolbar()
 
         saveButton.setOnClickListener {
             val updatedMarkdown = editText.text.toString()
@@ -62,6 +70,82 @@ class MarkdownEditorFragment : Fragment() {
             })
 
             parentFragmentManager.popBackStack()
+        }
+    }
+
+    private fun setupToolbar() {
+        val actions = listOf(
+            ToolbarAction("B") { wrapSelection("**", "**") } to "Жирный",
+            ToolbarAction("I") { wrapSelection("*", "*") } to "Курсив",
+            ToolbarAction("H") { insertAtLineStart("# ") } to "Заголовок",
+            ToolbarAction("1.") { insertAtLineStart("1. ") } to "Нумерованный список",
+            ToolbarAction("-") { insertAtLineStart("- ") } to "Маркированный список",
+            ToolbarAction("[]()") { insertLink() } to "Ссылка",
+            ToolbarAction("![]()") { wrapSelection("![", "](url)") } to "Изображение"
+        )
+
+        actions.forEach { (action, description) ->
+            addToolbarButton(action.symbol, action.handler, description)
+        }
+    }
+
+    private fun addToolbarButton(
+        symbol: String,
+        handler: () -> Unit,
+        contentDesc: String
+    ) {
+        val button = Button(requireContext()).apply {
+            text = symbol
+            contentDescription = contentDesc
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(4, 4, 4, 4)
+            }
+            setOnClickListener { handler() }
+        }
+        toolbar.addView(button)
+    }
+
+    private fun wrapSelection(prefix: String, postfix: String) {
+        val start = editText.selectionStart
+        val end = editText.selectionEnd
+
+        if (start == end) {
+            editText.text.insert(start, "$prefix$postfix")
+            editText.setSelection(start + prefix.length)
+        } else {
+            val selected = editText.text.substring(start, end)
+            editText.text.replace(start, end, "$prefix$selected$postfix")
+            editText.setSelection(end + prefix.length + postfix.length)
+        }
+    }
+
+    private fun insertAtLineStart(text: String) {
+        val cursorPos = editText.selectionStart
+        val textContent = editText.text.toString()
+
+        var lineStart = cursorPos
+        while (lineStart > 0 && textContent[lineStart - 1] != '\n') {
+            lineStart--
+        }
+
+        editText.text.insert(lineStart, text)
+        editText.setSelection(cursorPos + text.length)
+    }
+
+    private fun insertLink() {
+        val start = editText.selectionStart
+        val end = editText.selectionEnd
+
+        if (start == end) {
+            editText.text.insert(start, "[текст](url)")
+            editText.setSelection(start + 1, start + 6) // Выделяет "текст"
+        } else {
+            val selected = editText.text.substring(start, end)
+            editText.text.replace(start, end, "[$selected](url)")
+            editText.setSelection(end + 3, end + 6) // Выделяет "url"
         }
     }
 
@@ -88,4 +172,9 @@ class MarkdownEditorFragment : Fragment() {
             Toast.makeText(requireContext(), "Ошибка сохранения: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
+
+    private data class ToolbarAction(
+        val symbol: String,
+        val handler: () -> Unit
+    )
 }

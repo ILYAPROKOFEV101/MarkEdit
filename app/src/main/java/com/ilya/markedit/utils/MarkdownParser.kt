@@ -40,8 +40,11 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.concurrent.Executors
 import java.util.regex.Pattern
-import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
+
+import android.util.Base64
+
+
 
 
 object MarkdownParser {
@@ -324,20 +327,30 @@ object MarkdownParser {
         val executor = Executors.newSingleThreadExecutor()
         val handler = Handler(Looper.getMainLooper())
 
+        // 1. Проверка кэша
+        val cachedBitmap = imageCache.get(url)
+        if (cachedBitmap != null) {
+            Log.d("MarkdownParser", "Loaded from cache: $url")
+            progressBar.visibility = View.GONE
+            imageView.setImageBitmap(cachedBitmap)
+            imageView.visibility = View.VISIBLE
+
+            val maxWidth = Resources.getSystem().displayMetrics.widthPixels - 32
+            val scaleFactor = maxWidth.toFloat() / cachedBitmap.width
+            val height = (cachedBitmap.height * scaleFactor).toInt()
+            imageView.layoutParams = LinearLayout.LayoutParams(maxWidth, height)
+            return
+        }
+
+        // 2. Если нет в кэше — загружаем
         executor.execute {
             try {
                 val bitmap = if (url.startsWith("data:image")) {
-                    // Обработка base64
-                    Log.d("MarkdownParser", "Loading image from base64 data URI")
+                    Log.d("MarkdownParser", "Loading image from base64")
                     val base64Data = url.substringAfter("base64,")
-                    val decodedBytes = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        java.util.Base64.getDecoder().decode(base64Data)
-                    } else {
-                        TODO("VERSION.SDK_INT < O")
-                    }
+                    val decodedBytes = Base64.decode(base64Data, Base64.DEFAULT)
                     BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
                 } else {
-                    // Обработка обычного URL
                     Log.d("MarkdownParser", "Loading image from URL: $url")
                     val imageUrl = URL(url)
                     val connection = imageUrl.openConnection() as HttpURLConnection
@@ -355,6 +368,9 @@ object MarkdownParser {
                 }
 
                 if (bitmap == null) throw IOException("Failed to decode image")
+
+                // 3. Сохраняем в кэш
+                imageCache.put(url, bitmap)
 
                 handler.post {
                     progressBar.visibility = View.GONE
@@ -388,7 +404,7 @@ object MarkdownParser {
         }
     }
 
-    private fun parseInlineMarkdown(text: String): SpannableStringBuilder {
+    fun parseInlineMarkdown(text: String): SpannableStringBuilder {
         val spannable = SpannableStringBuilder(text)
         applySpanMatches(spannable, CENTER_PATTERN) { _, start, end ->
             spannable.setSpan(
