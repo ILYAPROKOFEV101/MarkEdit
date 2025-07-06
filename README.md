@@ -16,9 +16,10 @@
 * Загрузка по ссылке
 
 После загрузки файл отображается в списке быстрых файлов в нижней части экрана. Этот список включает как загруженные файлы, так и уже доступные в файловой системе.
-![telegram-cloud-photo-size-2-5427351044842715189-y](https://github.com/user-attachments/assets/639f0439-34dc-45df-942c-78c8e440acce)
 
-![telegram-cloud-photo-size-2-5427351044842715190-y](https://github.com/user-attachments/assets/8c445b01-3db3-499b-95c9-ece36d54d2f8)
+<img src="https://github.com/user-attachments/assets/639f0439-34dc-45df-942c-78c8e440acce" width="300"/>
+
+<img src="https://github.com/user-attachments/assets/8c445b01-3db3-499b-95c9-ece36d54d2f8" width="300"/>
 
 ---
 
@@ -36,7 +37,7 @@
 * Таблицы
 * Изображения (по ссылке)
 
-![telegram-cloud-photo-size-2-5427351044842715192-y](https://github.com/user-attachments/assets/106ba4a5-e759-4b86-8e5f-8e4b58ff820c)
+<img src="https://github.com/user-attachments/assets/8c445b01-3db3-499b-95c9-ece36d54d2f8" width="300"/>
 
 ---
 
@@ -66,7 +67,7 @@
 
 После сохранения файл обновляется на устройстве и остаётся доступным для дальнейшего редактирования.
 
-![telegram-cloud-photo-size-2-5429524830870435213-y](https://github.com/user-attachments/assets/76488015-d016-442a-9b2b-cd52dedfacce)
+<img src="https://github.com/user-attachments/assets/8c445b01-3db3-499b-95c9-ece36d54d2f8" width="300"/>
 
 ---
 
