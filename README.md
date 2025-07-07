@@ -37,8 +37,8 @@
 * Таблицы
 * Изображения (по ссылке)
 
-<img src="https://github.com/user-attachments/assets/8c445b01-3db3-499b-95c9-ece36d54d2f8" width="300"/>
 
+<img src="https://github.com/user-attachments/assets/91c2539d-a773-4517-8feb-fab59d72bee8" width="300"/>
 ---
 
 ### Тестирование и устойчивость
@@ -67,7 +67,7 @@
 
 После сохранения файл обновляется на устройстве и остаётся доступным для дальнейшего редактирования.
 
-<img src="https://github.com/user-attachments/assets/8c445b01-3db3-499b-95c9-ece36d54d2f8" width="300"/>
+<img src="https://github.com/user-attachments/assets/64f06a7d-fdd0-49a1-992a-6c0cddfdcd25" width="300"/>
 
 ---
 
